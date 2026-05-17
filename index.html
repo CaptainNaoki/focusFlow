@@ -840,12 +840,6 @@ function getEffectiveChoices(tid, baseCh){
   return [...new Set([...base,...extra])];
 }
 
-function getCh(tid){
-  const def=taskDefs(0).find(t=>t.id===tid);
-  const base=def&&def.defCh||[];
-  return base; // already resolved via getEffectiveChoices in taskDefs
-}
-
 function weekId(){
   const d=new Date(),thu=new Date(d);
   thu.setDate(d.getDate()+4-(d.getDay()||7));
@@ -879,10 +873,6 @@ function saveSettings(){try{localStorage.setItem('plnr_settings',JSON.stringify(
 function dd(i){if(!data[i])data[i]={};return data[i];}
 function trec(di,tid){const d=dd(di);if(!d[tid])d[tid]={};return d[tid];}
 function crec(di,tid,ch){const t=trec(di,tid);if(!t.choices)t.choices={};if(!t.choices[ch])t.choices[ch]={};return t.choices[ch];}
-function getCh(tid){
-  const def=[...taskDefs(0),...taskDefs(2),...taskDefs(6)].find(t=>t.id===tid);
-  return def&&def.defCh||[];
-}
 function beep(){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -1323,32 +1313,39 @@ function renderCard(task){
         ${!running&&!done&&elapsed>0?`<button class="btn-go resume" onclick="startTimer(${selDay},'${task.id}',null,${dur})">↩</button><button class="btn-stop" onclick="event.stopPropagation();resetTask('${task.id}',event)" title="Recommencer">🔄</button>`:''}
         ${running?`<button class="btn-stop" onclick="stopTimer(${selDay},'${task.id}',null,false)">⏹</button><button class="btn-stop" onclick="event.stopPropagation();resetTask('${task.id}',event)" title="Recommencer">🔄</button>`:''}
         ${done?`<button class="btn-stop" onclick="event.stopPropagation();resetTask('${task.id}',event)" title="Recommencer">🔄</button>`:''}
-        <button class="btn-add" onclick="openTodo('${task.id}','${task.lbl.replace(/'/g,"\\'")}')" title="Todo list" style="margin-left:auto;background:${todoActive?'rgba(124,106,255,0.15)':'var(--surface2)'};border-color:${todoActive?'var(--accent)':'var(--border)'};color:${todoActive?'var(--accent2)':'var(--text2)'}">📝</button>
       </div>
       ${rec.startTime?`<div class="tts">Début : ${fmtHM(rec.startTime)}${rec.endTime?' · Fin : '+fmtHM(rec.endTime):' · En cours...'}</div>`:''}
     </div>`;
   }
 
+  // ── CHOICES / ADD-ROW (toutes les tâches) ─────────────────────────
   let choicesHtml='';
-  if(task.type){
+  {
     const choices=getCh(task.id);
     const exp=expanded[task.id];
-    const chipsHtml=choices.map(ch=>{
-      const cr=(rec.choices&&rec.choices[ch])||{};
-      const cDone=!!cr.done,cRunning=!!ivs[tkey(task.id,ch)];
-      const cEl=cr.elapsed||0,isExp=exp===ch;
-      const subDur=getDur(task.id);
-      const chipSty=cDone?`background:${c.mid};color:var(--bg);border-color:${c.mid}`:
-                    isExp?`background:${c.bg};border-color:${c.mid};color:${c.txt}`:'';
-      return`<div class="chip" style="${chipSty}" onclick="event.stopPropagation();toggleExp('${task.id}','${ch}')">
-        ${cDone?'✓ ':''}${ch}
-        ${cRunning?`<span class="chip-timer rdot" style="background:${c.mid};margin:0"></span><span class="chip-timer">${fmt(cEl)}</span>`:''}
-        ${cDone&&cr.elapsed?`<span class="chip-timer">${fmt(cr.elapsed)}</span>`:''}
-      </div>`;
-    }).join('');
+    const mgOpen=manageChoicesOpen[task.id];
 
+    // Chips (seulement si la tâche est multi OU a déjà des chips custom)
+    let chipsHtml='';
+    if(task.type||choices.length>0){
+      chipsHtml=choices.map(ch=>{
+        const cr=(rec.choices&&rec.choices[ch])||{};
+        const cDone=!!cr.done,cRunning=!!ivs[tkey(task.id,ch)];
+        const cEl=cr.elapsed||0,isExp=exp===ch;
+        const subDur=getDur(task.id);
+        const chipSty=cDone?`background:${c.mid};color:var(--bg);border-color:${c.mid}`:
+                      isExp?`background:${c.bg};border-color:${c.mid};color:${c.txt}`:'';
+        return`<div class="chip" style="${chipSty}" onclick="event.stopPropagation();toggleExp('${task.id}','${ch}')">
+          ${cDone?'✓ ':''}${ch}
+          ${cRunning?`<span class="chip-timer rdot" style="background:${c.mid};margin:0"></span><span class="chip-timer">${fmt(cEl)}</span>`:''}
+          ${cDone&&cr.elapsed?`<span class="chip-timer">${fmt(cr.elapsed)}</span>`:''}
+        </div>`;
+      }).join('');
+    }
+
+    // Sub-timer pour le chip sélectionné
     let subTimerHtml='';
-    if(exp){
+    if(exp&&(task.type||choices.length>0)){
       const cr=(rec.choices&&rec.choices[exp])||{};
       const cDone=cr.done,cRunning=!!ivs[tkey(task.id,exp)];
       const cEl=cr.elapsed||0;
@@ -1384,19 +1381,18 @@ function renderCard(task){
       }
     }
 
-    // Manage choices panel
-    const mgOpen=manageChoicesOpen[task.id];
-    const mgPanel=mgOpen?`<div class="manage-panel">
+    // Panneau de gestion (⚙)
+    const mgPanel=mgOpen&&choices.length>0?`<div class="manage-panel">
       <div class="manage-panel-title">Gérer les options</div>
       ${choices.map(ch=>`<div class="chip-edit-row">
         <span class="chip-edit-lbl">${ch}</span>
         <button class="chip-ren-btn" onclick="event.stopPropagation();renameChoice('${task.id}','${ch}')">✏️</button>
         <button class="chip-del-btn" onclick="event.stopPropagation();removeChoice('${task.id}','${ch}')">✕</button>
       </div>`).join('')}
-    </div>`:'';
+    </div>`:mgOpen&&choices.length===0?`<div class="manage-panel"><div style="font-size:12px;color:var(--text2);text-align:center;padding:8px">Ajoute d'abord des options ci-dessous</div></div>`:'';
 
     choicesHtml=`<div class="choices-wrap" onclick="event.stopPropagation()">
-      <div class="chips">${chipsHtml}</div>
+      ${chipsHtml?`<div class="chips">${chipsHtml}</div>`:''}
       ${subTimerHtml}
       ${mgPanel}
       <div class="add-row">
@@ -1406,7 +1402,7 @@ function renderCard(task){
         <button class="btn-add" onclick="openTodo('${task.id}','${task.lbl.replace(/'/g,"\\'")}')" title="Todo list" style="background:${todoActive?'rgba(124,106,255,0.15)':'var(--surface2)'};border-color:${todoActive?'var(--accent)':'var(--border)'};color:${todoActive?'var(--accent2)':'var(--text2)'}">📝</button>
       </div>
     </div>`;
-  }
+  } // fin du bloc choicesHtml
 
   return`<div class="tcard" style="${cardBorder}">
     <div class="tmain">
@@ -1461,12 +1457,33 @@ function undoChoice(tid,ch){
 function addCh(tid){
   const inp=document.getElementById('ai-'+tid);if(!inp)return;
   const v=inp.value.trim();if(!v)return;
+
+  // Auto-convertit la tâche en multi si elle est simple
+  const allDefs=[...BASE_TASKS,...SPECIAL_TASKS,...extraTasks];
+  const taskDef=allDefs.find(t=>t.id===tid);
+  if(taskDef&&!taskDef.type){
+    taskDef.type='multi';
+    if(!taskDef.defCh)taskDef.defCh=[];
+    saveCustomizations();
+  }
+
   if(!customChoices[tid])customChoices[tid]=[];
-  if(!getCh(tid).includes(v)){customChoices[tid].push(v);saveCustomizations();save();render();}
+  const already=getCh(tid);
+  if(!already.includes(v)){
+    customChoices[tid].push(v);
+    saveCustomizations();save();render();
+  }
   inp.value='';
+  // Ré-focus sur l'input après re-render
+  setTimeout(()=>{const el=document.getElementById('ai-'+tid);if(el)el.focus();},50);
 }
 
-// ── MODAL SYSTEM ──────────────────────────────────────────────────────
+function getCh(tid){
+  const def=[...taskDefs(0),...taskDefs(2),...taskDefs(6)].find(t=>t.id===tid);
+  const base=def&&def.defCh||[];
+  const extra=(customChoices[tid]||[]).filter(c=>!(removedChoices[tid]||[]).includes(c));
+  return [...new Set([...base,...extra])];
+}
 let modalCallback=null;
 function showModal(title,placeholder,defaultVal,btns){
   document.getElementById('modal-title').textContent=title;
