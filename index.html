@@ -435,7 +435,129 @@
     text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;
   }
 
-  /* ─── LOCK OVERLAY ─── */
+  /* ─── TODO LIST ─── */
+  .todo-modal {
+    display:none; position:fixed; inset:0; z-index:600;
+    background:rgba(0,0,0,0.65); backdrop-filter:blur(8px);
+    align-items:flex-end; justify-content:center; padding:0;
+  }
+  .todo-modal.show { display:flex; }
+  .todo-sheet {
+    background:var(--bg2); border:1px solid var(--border2);
+    border-radius:24px 24px 0 0; width:100%; max-width:580px;
+    max-height:80vh; display:flex; flex-direction:column;
+    box-shadow:0 -8px 40px rgba(0,0,0,0.5);
+    animation: slideUp 0.25s cubic-bezier(0.22,1,0.36,1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity:0; }
+    to   { transform: translateY(0);    opacity:1; }
+  }
+  .todo-sheet-handle {
+    width:40px; height:4px; border-radius:99px;
+    background:var(--border2); margin:12px auto 0;
+  }
+  .todo-sheet-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px 10px;
+  }
+  .todo-sheet-title {
+    font-size:15px; font-weight:700; color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .todo-sheet-close {
+    width:30px; height:30px; border-radius:50%;
+    border:none; background:var(--surface2); color:var(--text2);
+    font-size:16px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .todo-progress-wrap {
+    padding:0 18px 10px;
+  }
+  .todo-progress-bar {
+    height:6px; background:var(--surface2); border-radius:99px; overflow:hidden;
+  }
+  .todo-progress-fill {
+    height:100%; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width 0.4s cubic-bezier(0.22,1,0.36,1);
+  }
+  .todo-progress-lbl {
+    font-size:10px; color:var(--text2); margin-top:5px;
+    display:flex; justify-content:space-between;
+  }
+  .todo-list {
+    flex:1; overflow-y:auto; padding:4px 18px 12px;
+  }
+  .todo-item {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--border);
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+  .todo-item:last-child { border-bottom:none; }
+  .todo-cb {
+    width:20px; height:20px; border-radius:6px; flex-shrink:0;
+    border:2px solid var(--border2); background:transparent;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:all 0.15s; font-size:11px; color:transparent;
+  }
+  .todo-cb.checked {
+    background:var(--accent); border-color:var(--accent); color:#fff;
+  }
+  .todo-cb-lbl {
+    flex:1; font-size:13px; color:var(--text); cursor:pointer;
+    transition:all 0.2s; line-height:1.4;
+  }
+  .todo-cb-lbl.done {
+    text-decoration:line-through; color:var(--text2); opacity:0.6;
+  }
+  .todo-item-actions { display:flex; gap:4px; flex-shrink:0; }
+  .todo-edit-btn, .todo-del-btn {
+    width:26px; height:26px; border-radius:7px;
+    border:1px solid var(--border); background:var(--surface2);
+    font-size:12px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; transition:all 0.15s;
+  }
+  .todo-del-btn { border-color:rgba(248,113,113,0.25); background:rgba(248,113,113,0.07); }
+  .todo-add-row {
+    padding:12px 18px 18px; display:flex; gap:8px;
+    border-top:1px solid var(--border);
+  }
+  .todo-add-inp {
+    flex:1; font-size:13px; padding:10px 14px;
+    border-radius:12px; border:1px solid var(--border2);
+    background:var(--surface); color:var(--text);
+    outline:none; font-family:'Sora',sans-serif;
+  }
+  .todo-add-inp:focus { border-color:var(--accent); }
+  .todo-add-btn {
+    padding:10px 16px; border-radius:12px; border:none;
+    background:var(--accent); color:#fff; font-size:13px;
+    font-weight:700; cursor:pointer; white-space:nowrap;
+    font-family:'Sora',sans-serif;
+  }
+
+  /* ─── TODO PROGRESS ON CARD ─── */
+  .card-todo-bar {
+    margin:8px 16px 4px; padding:8px 12px;
+    background:var(--surface); border-radius:10px;
+    border:1px solid var(--border);
+  }
+  .card-todo-bar-top {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:6px;
+  }
+  .card-todo-bar-lbl { font-size:10px; color:var(--text2); font-weight:600; }
+  .card-todo-bar-pct { font-size:10px; font-weight:700; color:var(--accent2); }
+  .card-todo-track {
+    height:4px; background:var(--surface2); border-radius:99px; overflow:hidden;
+  }
+  .card-todo-fill {
+    height:100%; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width 0.4s;
+  }
   .task-locked-msg {
     font-size:11px; color:var(--text2); font-style:italic;
     padding:6px 0 2px; display:flex; align-items:center; gap:6px;
@@ -500,6 +622,35 @@
   <div class="ubtns">
     <button class="ubtn-ok" onclick="doUpdate()">Mettre à jour</button>
     <button class="ubtn-later" onclick="document.getElementById('update-banner').classList.remove('show')">Plus tard</button>
+  </div>
+</div>
+
+<!-- Todo List Modal -->
+<div class="todo-modal" id="todo-modal" onclick="if(event.target===this)closeTodo()">
+  <div class="todo-sheet">
+    <div class="todo-sheet-handle"></div>
+    <div class="todo-sheet-hdr">
+      <div class="todo-sheet-title">
+        <span>☑️</span>
+        <span id="todo-sheet-title">Todo list</span>
+      </div>
+      <button class="todo-sheet-close" onclick="closeTodo()">✕</button>
+    </div>
+    <div class="todo-progress-wrap" id="todo-progress-wrap" style="display:none">
+      <div class="todo-progress-bar">
+        <div class="todo-progress-fill" id="todo-progress-fill" style="width:0%"></div>
+      </div>
+      <div class="todo-progress-lbl">
+        <span id="todo-progress-lbl-l">0 / 0 terminé</span>
+        <span id="todo-progress-lbl-r">0%</span>
+      </div>
+    </div>
+    <div class="todo-list" id="todo-list"></div>
+    <div class="todo-add-row">
+      <input class="todo-add-inp" id="todo-add-inp" placeholder="Ajouter un élément..."
+        onkeydown="if(event.key==='Enter')todoAdd()">
+      <button class="todo-add-btn" onclick="todoAdd()">+ Ajouter</button>
+    </div>
   </div>
 </div>
 
@@ -817,6 +968,91 @@ function masterDone(){
   return s;
 }
 
+// ── TODO LIST ─────────────────────────────────────────────────────────
+let todoData={};
+let currentTodoTid=null;
+let editingTodoId=null;
+
+(function loadTodo(){
+  try{const s=localStorage.getItem('plnr_todo');if(s)todoData=JSON.parse(s);}catch(e){}
+})();
+function saveTodo(){try{localStorage.setItem('plnr_todo',JSON.stringify(todoData));}catch(e){}}
+function getTodoItems(tid){return todoData[tid]||[];}
+
+function openTodo(tid,lbl){
+  currentTodoTid=tid; editingTodoId=null;
+  document.getElementById('todo-sheet-title').textContent=lbl;
+  document.getElementById('todo-add-inp').value='';
+  renderTodoModal();
+  document.getElementById('todo-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('todo-add-inp').focus(),300);
+}
+function closeTodo(){document.getElementById('todo-modal').classList.remove('show');currentTodoTid=null;editingTodoId=null;}
+
+function renderTodoModal(){
+  const tid=currentTodoTid;if(!tid)return;
+  const items=getTodoItems(tid);
+  const done=items.filter(i=>i.done).length;
+  const total=items.length;
+  const pct=total>0?Math.round(done/total*100):0;
+  const pw=document.getElementById('todo-progress-wrap');
+  if(total>0){
+    pw.style.display='';
+    document.getElementById('todo-progress-fill').style.width=pct+'%';
+    document.getElementById('todo-progress-lbl-l').textContent=`${done} / ${total} terminé${done>1?'s':''}`;
+    document.getElementById('todo-progress-lbl-r').textContent=pct+'%';
+  }else{pw.style.display='none';}
+  const list=document.getElementById('todo-list');
+  if(items.length===0){
+    list.innerHTML=`<div style="text-align:center;padding:32px 16px;color:var(--text2);font-size:13px">
+      <div style="font-size:28px;margin-bottom:10px">☑️</div>Aucun élément — ajoutes-en un ci-dessous !
+    </div>`;return;
+  }
+  list.innerHTML=items.map(item=>{
+    const isEditing=editingTodoId===item.id;
+    return`<div class="todo-item">
+      <div class="todo-cb${item.done?' checked':''}" onclick="todoToggle('${tid}','${item.id}')">${item.done?'✓':''}</div>
+      ${isEditing
+        ?`<input class="todo-add-inp" id="todo-edit-${item.id}" value="${item.text.replace(/"/g,'&quot;')}" style="flex:1;font-size:13px;padding:6px 10px" onkeydown="if(event.key==='Enter')todoSaveEdit('${tid}','${item.id}');if(event.key==='Escape'){editingTodoId=null;renderTodoModal();}" onclick="event.stopPropagation()">`
+        :`<span class="todo-cb-lbl${item.done?' done':''}" onclick="todoToggle('${tid}','${item.id}')">${item.text}</span>`
+      }
+      <div class="todo-item-actions">
+        ${isEditing
+          ?`<button class="todo-edit-btn" onclick="todoSaveEdit('${tid}','${item.id}')" style="color:var(--accent2);border-color:var(--accent)">✓</button>`
+          :`<button class="todo-edit-btn" onclick="todoStartEdit('${tid}','${item.id}')">✏️</button>`
+        }
+        <button class="todo-del-btn" onclick="todoDel('${tid}','${item.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+  if(editingTodoId){setTimeout(()=>{const el=document.getElementById('todo-edit-'+editingTodoId);if(el){el.focus();el.select();}},50);}
+}
+
+function todoAdd(){
+  const tid=currentTodoTid;if(!tid)return;
+  const inp=document.getElementById('todo-add-inp');
+  const text=inp.value.trim();if(!text)return;
+  if(!todoData[tid])todoData[tid]=[];
+  todoData[tid].push({id:'td_'+Date.now(),text,done:false});
+  inp.value='';saveTodo();renderTodoModal();render();inp.focus();
+}
+function todoToggle(tid,id){
+  const item=(todoData[tid]||[]).find(i=>i.id===id);if(!item)return;
+  item.done=!item.done;saveTodo();renderTodoModal();render();
+}
+function todoStartEdit(tid,id){editingTodoId=id;renderTodoModal();}
+function todoSaveEdit(tid,id){
+  const inp=document.getElementById('todo-edit-'+id);if(!inp)return;
+  const text=inp.value.trim();
+  if(text){const item=(todoData[tid]||[]).find(i=>i.id===id);if(item)item.text=text;saveTodo();}
+  editingTodoId=null;renderTodoModal();render();
+}
+function todoDel(tid,id){
+  if(!todoData[tid])return;
+  todoData[tid]=todoData[tid].filter(i=>i.id!==id);
+  saveTodo();renderTodoModal();render();
+}
+
 function render(){
   renderHdr();renderStats();renderPills();renderDayNav();renderTasks();renderAlerts();
 }
@@ -1036,6 +1272,13 @@ function renderCard(task){
 
   // Icons intégrés dans le header — plus de barre séparée
   // Bouton supprimer pour TOUTES les tâches (y compris de base)
+  const todoItems=getTodoItems(task.id);
+  const todoDone=todoItems.filter(t=>t.done).length;
+  const todoTotal=todoItems.length;
+  const todoHasItems=todoTotal>0;
+  const todoPct=todoTotal>0?Math.round(todoDone/todoTotal*100):0;
+  const todoActive=todoTotal>0;
+
   const cardActions=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
     <span class="tbadge" style="background:${c.bg};color:${c.txt};border:1px solid ${c.bd}">${durLbl}</span>
     <div style="display:flex;gap:4px;margin-top:2px" onclick="event.stopPropagation()">
@@ -1044,6 +1287,17 @@ function renderCard(task){
       <button title="Supprimer cette tâche" onclick="removeTaskConfirm('${task.id}')" style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(248,113,113,0.25);background:rgba(248,113,113,0.07);color:var(--red);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='rgba(248,113,113,0.18)'" onmouseout="this.style.background='rgba(248,113,113,0.07)'">🗑</button>
     </div>
   </div>`;
+
+  // Barre de progression todo (uniquement si items existent)
+  const todoBar=todoHasItems?`<div class="card-todo-bar">
+    <div class="card-todo-bar-top">
+      <span class="card-todo-bar-lbl">☑️ Todo · ${todoDone}/${todoTotal}</span>
+      <span class="card-todo-bar-pct">${todoPct}%</span>
+    </div>
+    <div class="card-todo-track">
+      <div class="card-todo-fill" style="width:${todoPct}%"></div>
+    </div>
+  </div>`:'';
 
   const durEditor=isEditDur?`<div style="display:flex;align-items:center;gap:8px;padding:4px 16px 12px 16px" onclick="event.stopPropagation()">
     <span style="font-size:11px;color:var(--text2)">Durée (min) :</span>
@@ -1069,6 +1323,7 @@ function renderCard(task){
         ${!running&&!done&&elapsed>0?`<button class="btn-go resume" onclick="startTimer(${selDay},'${task.id}',null,${dur})">↩</button><button class="btn-stop" onclick="event.stopPropagation();resetTask('${task.id}',event)" title="Recommencer">🔄</button>`:''}
         ${running?`<button class="btn-stop" onclick="stopTimer(${selDay},'${task.id}',null,false)">⏹</button><button class="btn-stop" onclick="event.stopPropagation();resetTask('${task.id}',event)" title="Recommencer">🔄</button>`:''}
         ${done?`<button class="btn-stop" onclick="event.stopPropagation();resetTask('${task.id}',event)" title="Recommencer">🔄</button>`:''}
+        <button class="btn-add" onclick="openTodo('${task.id}','${task.lbl.replace(/'/g,"\\'")}')" title="Todo list" style="margin-left:auto;background:${todoActive?'rgba(124,106,255,0.15)':'var(--surface2)'};border-color:${todoActive?'var(--accent)':'var(--border)'};color:${todoActive?'var(--accent2)':'var(--text2)'}">📝</button>
       </div>
       ${rec.startTime?`<div class="tts">Début : ${fmtHM(rec.startTime)}${rec.endTime?' · Fin : '+fmtHM(rec.endTime):' · En cours...'}</div>`:''}
     </div>`;
@@ -1148,6 +1403,7 @@ function renderCard(task){
         <input class="add-inp" id="ai-${task.id}" placeholder="Ajouter une option..." onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')addCh('${task.id}')">
         <button class="btn-add" onclick="addCh('${task.id}')">+ Ajouter</button>
         <button class="btn-add" onclick="toggleManageChoices('${task.id}')" style="background:${mgOpen?'rgba(124,106,255,0.15)':'var(--surface2)'};border-color:${mgOpen?'var(--accent)':'var(--border)'}">⚙</button>
+        <button class="btn-add" onclick="openTodo('${task.id}','${task.lbl.replace(/'/g,"\\'")}')" title="Todo list" style="background:${todoActive?'rgba(124,106,255,0.15)':'var(--surface2)'};border-color:${todoActive?'var(--accent)':'var(--border)'};color:${todoActive?'var(--accent2)':'var(--text2)'}">📝</button>
       </div>
     </div>`;
   }
@@ -1161,7 +1417,7 @@ function renderCard(task){
       </div>
       ${cardActions}
     </div>
-    ${durEditor}${timerHtml}${choicesHtml}
+    ${durEditor}${timerHtml}${choicesHtml}${todoBar}
   </div>`;
 }
 
