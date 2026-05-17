@@ -1297,7 +1297,8 @@ function renderCard(task){
   </div>`:'';
 
   let timerHtml='';
-  if(!task.type){
+  const hasChips=getCh(task.id).length>0;
+  if(!hasChips){
     // Lock message when task not yet started
     const lockMsg=(!running&&!done&&elapsed===0)?
       `<div class="task-locked-msg">🔒 Lance le minuteur pour pouvoir valider cette tâche</div>`:'';
