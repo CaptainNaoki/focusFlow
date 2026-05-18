@@ -650,7 +650,7 @@
     </div>
     <div class="todo-list" id="todo-list"></div>
     <div class="todo-add-row">
-      <input class="todo-add-inp" id="todo-add-inp" placeholder="Ajouter un élément..."
+      <input class="todo-add-inp" id="todo-add-inp" placeholder="Ajouter un élément… (## pour une section)"
         onkeydown="if(event.key==='Enter')todoAdd()">
       <button class="todo-add-btn" onclick="todoAdd()">+ Ajouter</button>
     </div>
@@ -749,23 +749,20 @@ const C={
 
 const DEF_DUR={
   ang:1800, math:7200, m1:14400, form:14400, lect:900,
-  cor:3600, cor1:3600, cor2:3600
+  cor:3600, cor1:3600, cor2:3600, islam:1800
 };
 function getDur(tid){return settings[tid]||DEF_DUR[tid]||3600;}
 
 // ── DEFAULT TASK DEFINITIONS (customizable) ──────────────────────────
 const BASE_TASKS=[
-  {id:'ang', lbl:'Anglais',            sub:'3 × 30 min · matin, journée, soir', col:'blue',  type:'multi', defCh:['Matin','Journée','Soir'], subDur:true},
+  {id:'ang', lbl:'Anglais',            sub:'3 × 30 min · matin, journée, soir', col:'blue',  type:'multi', defCh:['Matin-Duo-Shadowing','Midi-Duo-Podcast','Soir-Duo-Practice-Reading'], subDur:true},
   {id:'math',lbl:'Mathématiques',      sub:'Préparation concours ISSEA',         col:'amber', wmin:3},
   {id:'m1',  lbl:'Cours Master 1',     sub:'Choisir la matière à étudier',       col:'purple',type:'multi', defCh:DEF_MASTER},
   {id:'form',lbl:'Formations tech',    sub:'Choisir la formation à suivre',      col:'teal',  type:'multi', defCh:DEF_FORM},
   {id:'lect',lbl:'Lecture roman',      sub:'Culture générale quotidienne',       col:'coral'},
+  {id:'islam',lbl:'Islam',             sub:'Adhkâr & récitation quotidienne',    col:'green', type:'multi', defCh:["Matin-Du'as-Istighfar","Matin-Tajweed-Récitation","Midi-Azkar-Istighfar","Soir-Dua'as-Istighfar-Sourate Mulk"]},
 ];
-const SPECIAL_TASKS=[
-  {id:'cor', lbl:'Cours coranique',         sub:'Après-midi',col:'green', days:[2,5]},
-  {id:'cor1',lbl:'Cours coranique – matin', sub:'Matin',    col:'green', days:[6]},
-  {id:'cor2',lbl:'Cours coranique – soir',  sub:'Soir',     col:'green', days:[6]},
-];
+const SPECIAL_TASKS=[];
 
 // taskNames: overrides for lbl of any task id
 // extraTasks: [{id,lbl,sub,col,type?,defCh?}] — user-added sections
@@ -790,6 +787,11 @@ function loadCustomizations(){
       // Sync DEF arrays from customizations
       if(p.defForm)DEF_FORM=p.defForm;
       if(p.defMaster)DEF_MASTER=p.defMaster;
+      // Forcer lect et math sans chips
+      delete customChoices['lect'];
+      delete customChoices['math'];
+      // Supprimer les tâches coranique si encore présentes
+      removedTasks.add('cor');removedTasks.add('cor1');removedTasks.add('cor2');
     }
   }catch(e){}
 }
@@ -965,11 +967,81 @@ function masterDone(){
 let todoData={};
 let currentTodoTid=null;
 let editingTodoId=null;
+let currentPanel='home';
 
 (function loadTodo(){
   try{const s=localStorage.getItem('plnr_todo');if(s)todoData=JSON.parse(s);}catch(e){}
 })();
 function saveTodo(){try{localStorage.setItem('plnr_todo',JSON.stringify(todoData));}catch(e){}}
+
+// ── DONNÉES PAR DÉFAUT (todo math prédéfinie) ─────────────────────────
+(function injectDefaults(){
+  if(!todoData['math']||todoData['math'].length===0){
+    todoData['math']=[
+      {id:'td_mc',  text:'📌 Nombres complexes',                                      done:false,isSection:true},
+      {id:'td_mc1', text:'Écriture algébrique',                                       done:false,parent:'td_mc'},
+      {id:'td_mc2', text:'Opérations : somme, produit, quotient',                     done:false,parent:'td_mc'},
+      {id:'td_mc3', text:'Conjugué, module, argument',                                done:false,parent:'td_mc'},
+      {id:'td_mc4', text:'Forme trigonométrique et exponentielle',                    done:false,parent:'td_mc'},
+      {id:'td_mc5', text:'Représentation dans le plan',                               done:false,parent:'td_mc'},
+      {id:'td_mc6', text:'Formule de Moivre',                                         done:false,parent:'td_mc'},
+      {id:'td_mc7', text:"Racine carrée d'un complexe",                               done:false,parent:'td_mc'},
+      {id:'td_mc8', text:'Équations du 2nd degré à coeff. complexes',                 done:false,parent:'td_mc'},
+      {id:'td_mc9', text:'Racine n-ième, interprétation géométrique',                 done:false,parent:'td_mc'},
+      {id:'td_fn',  text:'📌 Fonctions numériques',                                   done:false,isSection:true},
+      {id:'td_fn1', text:"Limites (en un point, en l'infini), unicité",               done:false,parent:'td_fn'},
+      {id:'td_fn2', text:'Opérations sur les limites, formes indéterminées',          done:false,parent:'td_fn'},
+      {id:'td_fn3', text:'Croissances comparées',                                     done:false,parent:'td_fn'},
+      {id:'td_fn4', text:'Théorème des gendarmes',                                    done:false,parent:'td_fn'},
+      {id:'td_fn5', text:'Continuité, TVI',                                           done:false,parent:'td_fn'},
+      {id:'td_fn6', text:'Dérivée en un point, fonction dérivée',                     done:false,parent:'td_fn'},
+      {id:'td_fn7', text:'Dérivées : produit, quotient, composition, réciproque',     done:false,parent:'td_fn'},
+      {id:'td_fn8', text:'Théorème des accroissements finis',                         done:false,parent:'td_fn'},
+      {id:'td_fn9', text:'Dérivée seconde, variations, asymptotes',                   done:false,parent:'td_fn'},
+      {id:'td_su',  text:'📌 Suites numériques',                                      done:false,isSection:true},
+      {id:'td_su1', text:'Raisonnement par récurrence',                               done:false,parent:'td_su'},
+      {id:'td_su2', text:'Suite monotone, majorée, minorée, bornée',                  done:false,parent:'td_su'},
+      {id:'td_su3', text:'Convergence, suite croissante majorée',                     done:false,parent:'td_su'},
+      {id:'td_su4', text:'Suites arithmétiques et géométriques',                      done:false,parent:'td_su'},
+      {id:'td_su5', text:'Suites définies par récurrence',                            done:false,parent:'td_su'},
+      {id:'td_in',  text:'📌 Intégration',                                            done:false,isSection:true},
+      {id:'td_in1', text:"Intégrale d'une fonction continue sur un segment",          done:false,parent:'td_in'},
+      {id:'td_in2', text:'Interprétation géométrique',                                done:false,parent:'td_in'},
+      {id:'td_in3', text:'Linéarité, Chasles, encadrements',                          done:false,parent:'td_in'},
+      {id:'td_in4', text:'Valeur moyenne, inégalité de la moyenne',                   done:false,parent:'td_in'},
+      {id:'td_in5', text:'Intégration par parties, changement de variable',           done:false,parent:'td_in'},
+      {id:'td_in6', text:'Primitives',                                                done:false,parent:'td_in'},
+      {id:'td_fu',  text:'📌 Fonctions usuelles',                                     done:false,isSection:true},
+      {id:'td_fu1', text:'Fonction puissance xⁿ',                                    done:false,parent:'td_fu'},
+      {id:'td_fu2', text:'Logarithme népérien : propriétés, limites, dérivées',       done:false,parent:'td_fu'},
+      {id:'td_fu3', text:'Logarithme en base a',                                      done:false,parent:'td_fu'},
+      {id:'td_fu4', text:'Exponentielle : propriétés, limites, dérivées',             done:false,parent:'td_fu'},
+      {id:'td_fu5', text:'Sinus et cosinus : dérivées, variations, courbes',          done:false,parent:'td_fu'},
+      {id:'td_eq',  text:'📌 Équations différentielles',                              done:false,isSection:true},
+      {id:'td_eq1', text:'Vocabulaire : degré, ordre',                                done:false,parent:'td_eq'},
+      {id:'td_eq2', text:"Résolution y' = f(x)",                                      done:false,parent:'td_eq'},
+      {id:'td_eq3', text:"Résolution ay' + by = f(x)",                                done:false,parent:'td_eq'},
+      {id:'td_ge',  text:'📌 Géométrie',                                              done:false,isSection:true},
+      {id:'td_ge1', text:'Vecteurs, translations, combinaisons linéaires',            done:false,parent:'td_ge'},
+      {id:'td_ge2', text:'Bases, repères, décomposition',                             done:false,parent:'td_ge'},
+      {id:'td_ge3', text:"Droites et plans de l'espace",                              done:false,parent:'td_ge'},
+      {id:'td_ge4', text:'Produit scalaire, bilinéarité, orthogonalité',              done:false,parent:'td_ge'},
+      {id:'td_ge5', text:'Base orthonormée, formules de polarisation',                done:false,parent:'td_ge'},
+      {id:'td_ge6', text:'Projeté orthogonal, représentation paramétrique',           done:false,parent:'td_ge'},
+      {id:'td_ge7', text:"Équation cartésienne d'un plan",                            done:false,parent:'td_ge'},
+      {id:'td_pr',  text:'📌 Probabilités',                                           done:false,isSection:true},
+      {id:'td_pr1', text:'Combinaisons, arrangements, permutations',                  done:false,parent:'td_pr'},
+      {id:'td_pr2', text:'Événements, probabilité, équiprobabilité',                  done:false,parent:'td_pr'},
+      {id:'td_pr3', text:'Probabilité conditionnelle, arbre',                         done:false,parent:'td_pr'},
+      {id:'td_pr4', text:'Variables aléatoires : loi, espérance, variance',           done:false,parent:'td_pr'},
+      {id:'td_st',  text:'📌 Statistiques',                                           done:false,isSection:true},
+      {id:'td_st1', text:'Analyse univariée : moyenne, médiane, variance, quartiles', done:false,parent:'td_st'},
+      {id:'td_st2', text:'Effectif, fréquence',                                       done:false,parent:'td_st'},
+      {id:'td_st3', text:'Analyse bivariée, nuage de points, moindres carrés',        done:false,parent:'td_st'},
+    ];
+    saveTodo();
+  }
+})();
 function getTodoItems(tid){return todoData[tid]||[];}
 
 function openTodo(tid,lbl){
@@ -985,8 +1057,18 @@ function closeTodo(){document.getElementById('todo-modal').classList.remove('sho
 function renderTodoModal(){
   const tid=currentTodoTid;if(!tid)return;
   const items=getTodoItems(tid);
-  const done=items.filter(i=>i.done).length;
-  const total=items.length;
+
+  // Auto-update section done state based on children
+  items.forEach(item=>{
+    if(item.isSection){
+      const children=items.filter(i=>i.parent===item.id);
+      if(children.length>0) item.done=children.every(i=>i.done);
+    }
+  });
+
+  const leafItems=items.filter(i=>!i.isSection);
+  const done=leafItems.filter(i=>i.done).length;
+  const total=leafItems.length;
   const pct=total>0?Math.round(done/total*100):0;
   const pw=document.getElementById('todo-progress-wrap');
   if(total>0){
@@ -995,15 +1077,50 @@ function renderTodoModal(){
     document.getElementById('todo-progress-lbl-l').textContent=`${done} / ${total} terminé${done>1?'s':''}`;
     document.getElementById('todo-progress-lbl-r').textContent=pct+'%';
   }else{pw.style.display='none';}
+
   const list=document.getElementById('todo-list');
   if(items.length===0){
     list.innerHTML=`<div style="text-align:center;padding:32px 16px;color:var(--text2);font-size:13px">
       <div style="font-size:28px;margin-bottom:10px">☑️</div>Aucun élément — ajoutes-en un ci-dessous !
     </div>`;return;
   }
+
   list.innerHTML=items.map(item=>{
     const isEditing=editingTodoId===item.id;
-    return`<div class="todo-item">
+    const isSec=item.isSection;
+    const children=isSec?items.filter(i=>i.parent===item.id):[];
+    const allChildDone=isSec&&children.length>0&&children.every(i=>i.done);
+    const someChildDone=isSec&&children.some(i=>i.done);
+
+    // Section header style
+    if(isSec){
+      const secPct=children.length>0?Math.round(children.filter(i=>i.done).length/children.length*100):0;
+      return`<div style="margin-top:14px;margin-bottom:2px">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 4px 6px">
+          <div class="todo-cb${allChildDone?' checked':someChildDone?'':''}"
+            style="${allChildDone?'':'someChildDone?\"background:rgba(124,106,255,0.3);border-color:var(--accent)\":\"\"'};${!allChildDone&&children.length>0?'cursor:default;opacity:0.7':''}"
+            title="${allChildDone?'Section complète':'Coche tous les éléments pour valider'}"
+            onclick="${allChildDone?`todoToggleSection('${tid}','${item.id}')`:''}"
+          >${allChildDone?'✓':someChildDone?'…':''}</div>
+          ${isEditing
+            ?`<input class="todo-add-inp" id="todo-edit-${item.id}" value="${item.text.replace(/📌\s*/g,'').replace(/"/g,'&quot;')}" style="flex:1;font-size:13px;font-weight:700;padding:4px 10px" onkeydown="if(event.key==='Enter')todoSaveEdit('${tid}','${item.id}');if(event.key==='Escape'){editingTodoId=null;renderTodoModal();}" onclick="event.stopPropagation()">`
+            :`<span style="flex:1;font-size:13px;font-weight:700;color:${allChildDone?'var(--text2)':'var(--accent2)'};${allChildDone?'text-decoration:line-through;opacity:0.6':''}">${item.text} <span style="font-size:10px;font-weight:400;color:var(--text2);margin-left:4px">${secPct}%</span></span>`
+          }
+          <div class="todo-item-actions">
+            ${isEditing
+              ?`<button class="todo-edit-btn" onclick="todoSaveEdit('${tid}','${item.id}')" style="color:var(--accent2);border-color:var(--accent)">✓</button>`
+              :`<button class="todo-edit-btn" onclick="todoStartEdit('${tid}','${item.id}')">✏️</button>`
+            }
+            <button class="todo-del-btn" onclick="todoDel('${tid}','${item.id}')">🗑</button>
+          </div>
+        </div>
+        <div style="height:1px;background:var(--border2);margin:0 4px 4px"></div>
+      </div>`;
+    }
+
+    // Child item (indented)
+    const isChild=!!item.parent;
+    return`<div class="todo-item" style="${isChild?'padding-left:28px':''}">
       <div class="todo-cb${item.done?' checked':''}" onclick="todoToggle('${tid}','${item.id}')">${item.done?'✓':''}</div>
       ${isEditing
         ?`<input class="todo-add-inp" id="todo-edit-${item.id}" value="${item.text.replace(/"/g,'&quot;')}" style="flex:1;font-size:13px;padding:6px 10px" onkeydown="if(event.key==='Enter')todoSaveEdit('${tid}','${item.id}');if(event.key==='Escape'){editingTodoId=null;renderTodoModal();}" onclick="event.stopPropagation()">`
@@ -1018,6 +1135,7 @@ function renderTodoModal(){
       </div>
     </div>`;
   }).join('');
+
   if(editingTodoId){setTimeout(()=>{const el=document.getElementById('todo-edit-'+editingTodoId);if(el){el.focus();el.select();}},50);}
 }
 
@@ -1026,13 +1144,31 @@ function todoAdd(){
   const inp=document.getElementById('todo-add-inp');
   const text=inp.value.trim();if(!text)return;
   if(!todoData[tid])todoData[tid]=[];
-  todoData[tid].push({id:'td_'+Date.now(),text,done:false});
+  // Préfixe "##" pour créer une section : "## Mon titre"
+  const isSection=text.startsWith('##');
+  const cleanText=isSection?'📌 '+text.slice(2).trim():text;
+  todoData[tid].push({id:'td_'+Date.now(),text:cleanText,done:false,isSection:isSection||undefined});
   inp.value='';saveTodo();renderTodoModal();render();inp.focus();
 }
 function todoToggle(tid,id){
-  const item=(todoData[tid]||[]).find(i=>i.id===id);if(!item)return;
-  item.done=!item.done;saveTodo();renderTodoModal();render();
+  const items=todoData[tid]||[];
+  const item=items.find(i=>i.id===id);if(!item)return;
+  if(item.isSection){
+    // Section : toggle all children
+    const newState=!item.done;
+    items.filter(i=>i.parent===id).forEach(i=>i.done=newState);
+    item.done=newState;
+  } else {
+    item.done=!item.done;
+    // Auto-update parent section
+    if(item.parent){
+      const sec=items.find(i=>i.id===item.parent);
+      if(sec){const children=items.filter(i=>i.parent===sec.id);sec.done=children.every(i=>i.done);}
+    }
+  }
+  saveTodo();renderTodoModal();render();
 }
+function todoToggleSection(tid,secId){todoToggle(tid,secId);}
 function todoStartEdit(tid,id){editingTodoId=id;renderTodoModal();}
 function todoSaveEdit(tid,id){
   const inp=document.getElementById('todo-edit-'+id);if(!inp)return;
@@ -1266,11 +1402,12 @@ function renderCard(task){
   // Icons intégrés dans le header — plus de barre séparée
   // Bouton supprimer pour TOUTES les tâches (y compris de base)
   const todoItems=getTodoItems(task.id);
-  const todoDone=todoItems.filter(t=>t.done).length;
-  const todoTotal=todoItems.length;
-  const todoHasItems=todoTotal>0;
+  const todoLeafs=todoItems.filter(t=>!t.isSection);
+  const todoDone=todoLeafs.filter(t=>t.done).length;
+  const todoTotal=todoLeafs.length;
+  const todoHasItems=todoItems.length>0;
   const todoPct=todoTotal>0?Math.round(todoDone/todoTotal*100):0;
-  const todoActive=todoTotal>0;
+  const todoActive=todoItems.length>0;
 
   const cardActions=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
     <span class="tbadge" style="background:${c.bg};color:${c.txt};border:1px solid ${c.bd}">${durLbl}</span>
@@ -1638,7 +1775,6 @@ function saveDur(tid){
   editDur[tid]=false;
   render();
 }
-let currentPanel='home';
 function switchPanel(panel){
   currentPanel=panel;
   // Show/hide views
