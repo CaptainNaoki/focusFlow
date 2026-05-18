@@ -790,6 +790,10 @@ function loadCustomizations(){
       // Forcer lect et math sans chips
       delete customChoices['lect'];
       delete customChoices['math'];
+      // Supprimer le chip yxcv partout où il traîne
+      for(const tid in customChoices){
+        customChoices[tid]=customChoices[tid].filter(c=>c!=='yxcv');
+      }
       // Supprimer les tâches coranique si encore présentes
       removedTasks.add('cor');removedTasks.add('cor1');removedTasks.add('cor2');
     }
@@ -923,7 +927,10 @@ function stopTimer(di,tid,ch,auto_){
     if(rec.lastStart)rec.elapsed=(rec.elapsed||0)+(Date.now()-rec.lastStart)/1000;
     rec.timerRunning=false;
     if(auto_){rec.done=true;if(!rec.endTime)rec.endTime=new Date().toISOString();}
-    const t=trec(di,tid);t.done=Object.values(t.choices||{}).some(c=>c.done);
+    const t=trec(di,tid);
+    const allChoices=Object.values(t.choices||{});
+    const chips=getCh(tid);
+    t.done=chips.length>0&&chips.every(ch=>t.choices&&t.choices[ch]&&t.choices[ch].done);
   }else{
     const rec=trec(di,tid);
     if(rec.lastStart)rec.elapsed=(rec.elapsed||0)+(Date.now()-rec.lastStart)/1000;
@@ -1592,7 +1599,8 @@ function resetTask(tid,e){
 function toggleExp(tid,ch){expanded[tid]=expanded[tid]===ch?null:ch;render();}
 function undoChoice(tid,ch){
   const t=trec(selDay,tid);if(t.choices&&t.choices[ch])t.choices[ch]={};
-  t.done=Object.values(t.choices||{}).some(c=>c.done);
+    const chips=getCh(tid);
+    t.done=chips.length>0&&chips.every(ch=>t.choices&&t.choices[ch]&&t.choices[ch].done);
   expanded[tid]=null;save();render();
 }
 function addCh(tid){
