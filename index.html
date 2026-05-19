@@ -1344,9 +1344,149 @@ function renderPills(){
     </div>
   </div>`;
 
-  document.getElementById('weekly-tracker').innerHTML=mathBlock+angBlock
-    +tracker(getEffectiveTaskLbl('form'),'Couvre les 4 formations au moins une fois cette semaine',formList,fd,'teal',formList.length)
-    +tracker(getEffectiveTaskLbl('m1'),'Couvre les 3 matières au moins une fois cette semaine',masterList,md,'purple',masterList.length);
+  // Affichage conditionnel basé sur isTracked()
+  let html='';
+
+  // Math
+  if(isTracked('math')&&!removedTasks.has('math')){
+    const mathDoneN=mathN();
+    const mathDays=[];DAYS.forEach((_,i)=>{if(data[i]&&data[i].math&&data[i].math.done)mathDays.push(ABBR[i]);});
+    html+=`<div class="wtrack-card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">${getEffectiveTaskLbl('math')}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Objectif : min 3 séances/sem. · Concours ISSEA</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${mathDoneN>=3?C.amber.mid:'var(--text)'}">${mathDoneN}<span style="font-size:13px;font-weight:400;color:var(--text2)">/7</span></div>
+        <div style="font-size:10px;font-weight:600;color:${mathDoneN>=3?C.amber.mid:'var(--red)'}">${mathDoneN>=3?'Objectif min atteint ✓':'Min 3 requis'}</div>
+      </div>
+    </div>
+    <div style="height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:12px">
+      <div style="height:100%;width:${Math.round(mathDoneN/7*100)}%;background:${C.amber.mid};border-radius:99px"></div>
+    </div>
+    <div style="display:flex;gap:5px">${DAYS.map((_,i)=>{
+      const done=data[i]&&data[i].math&&data[i].math.done;
+      const isPast=i<TOD,isT=i===TOD;
+      const bg=done?C.amber.mid:isPast?'rgba(248,113,113,0.15)':'var(--surface2)';
+      const border=isT?`border:1.5px solid ${C.blue.mid}`:'border:1px solid var(--border)';
+      const lbl=done?'✓':isPast?'✗':'·';
+      const lblCol=done?'var(--bg)':isPast?'var(--red)':'var(--text2)';
+      return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="width:100%;height:30px;border-radius:8px;background:${bg};${border};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${lblCol}">${lbl}</div>
+        <span style="font-size:9px;color:${isT?C.blue.mid:'var(--text2)'};font-weight:${isT?700:400}">${ABBR[i]}</span>
+      </div>`;
+    }).join('')}</div>
+    ${mathDays.length?`<div style="font-size:11px;color:${C.amber.mid};margin-top:10px">Fait le${mathDays.length>1?'s':''} : <b>${mathDays.join(', ')}</b></div>`:''}
+  </div>`;
+  }
+
+  // Anglais
+  if(isTracked('ang')&&!removedTasks.has('ang')){
+    const ANG_SESSIONS=getCh('ang');
+    function angSessionsDoneForDay(i){
+      return ANG_SESSIONS.filter(s=>data[i]&&data[i].ang&&data[i].ang.choices&&data[i].ang.choices[s]&&data[i].ang.choices[s].done);
+    }
+    const totalAngDone=DAYS.reduce((n,_,i)=>n+angSessionsDoneForDay(i).length,0);
+    const maxAng=ANG_SESSIONS.length*7;
+    html+=`<div class="wtrack-card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">${getEffectiveTaskLbl('ang')}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">${ANG_SESSIONS.length} sessions/jour · 30 min chacune</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${totalAngDone>=7?C.blue.mid:'var(--text)'}">${totalAngDone}<span style="font-size:13px;font-weight:400;color:var(--text2)">/${maxAng}</span></div>
+        <div style="font-size:10px;font-weight:600;color:${C.blue.mid}">${totalAngDone} session(s) faite(s)</div>
+      </div>
+    </div>
+    <div style="height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:12px">
+      <div style="height:100%;width:${Math.round(totalAngDone/maxAng*100)}%;background:${C.blue.mid};border-radius:99px"></div>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:10px">
+      <thead><tr>
+        <td style="color:var(--text2);padding:3px 0;width:50px"></td>
+        ${ANG_SESSIONS.map(s=>`<td style="text-align:center;color:var(--text2);font-weight:700;padding:3px 6px;white-space:nowrap">${s.split('-')[0]}</td>`).join('')}
+      </tr></thead>
+      <tbody>${DAYS.map((_,i)=>{
+        const isT=i===TOD,isPast=i<TOD;
+        const done=angSessionsDoneForDay(i);
+        return`<tr style="${isT?`font-weight:800;color:${C.blue.mid}`:''}">
+          <td style="color:${isT?C.blue.mid:'var(--text2)'};padding:5px 0;font-size:10px">${ABBR[i]}${isT?' ◀':''}</td>
+          ${ANG_SESSIONS.map(s=>{
+            const ok=done.includes(s);
+            const miss=isPast&&!ok;
+            return`<td style="text-align:center;padding:4px">
+              <div style="width:24px;height:24px;border-radius:7px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;
+                ${ok?`background:${C.blue.mid};color:var(--bg)`:miss?'background:rgba(248,113,113,0.15);color:var(--red)':'background:var(--surface2);color:var(--text2)'}">
+                ${ok?'✓':miss?'✗':'·'}
+              </div>
+            </td>`;
+          }).join('')}
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+    </div>
+  </div>`;
+  }
+
+  // Formations tech
+  if(isTracked('form')&&!removedTasks.has('form')){
+    html+=tracker(getEffectiveTaskLbl('form'),'Couvre les formations au moins une fois cette semaine',formList,fd,'teal',formList.length);
+  }
+
+  // Master 1
+  if(isTracked('m1')&&!removedTasks.has('m1')){
+    html+=tracker(getEffectiveTaskLbl('m1'),'Couvre les matières au moins une fois cette semaine',masterList,md,'purple',masterList.length);
+  }
+
+  // Tâches custom avec suivi activé
+  const allTasks=[...BASE_TASKS,...extraTasks].filter(t=>!BUILTIN_TRACKED.includes(t.id)&&!removedTasks.has(t.id)&&isTracked(t.id));
+  allTasks.forEach(task=>{
+    const col=task.col||'blue';const c=C[col]||C.blue;
+    const chips=getCh(task.id);
+    if(chips.length>0){
+      // Multi-chip tracker
+      const doneSet=new Set();
+      DAYS.forEach((_,i)=>{
+        chips.forEach(ch=>{if(data[i]&&data[i][task.id]&&data[i][task.id].choices&&data[i][task.id].choices[ch]&&data[i][task.id].choices[ch].done)doneSet.add(ch);});
+      });
+      html+=tracker(getEffectiveTaskLbl(task.id),'Suivi hebdomadaire',chips,doneSet,col,chips.length);
+    } else {
+      // Simple daily tracker
+      const doneCount=DAYS.filter((_,i)=>data[i]&&data[i][task.id]&&data[i][task.id].done).length;
+      const days=[];DAYS.forEach((_,i)=>{if(data[i]&&data[i][task.id]&&data[i][task.id].done)days.push(ABBR[i]);});
+      html+=`<div class="wtrack-card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--text)">${getEffectiveTaskLbl(task.id)}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:3px">Suivi hebdomadaire</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${c.mid}">${doneCount}<span style="font-size:13px;font-weight:400;color:var(--text2)">/7</span></div>
+          </div>
+        </div>
+        <div style="height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:12px">
+          <div style="height:100%;width:${Math.round(doneCount/7*100)}%;background:${c.mid};border-radius:99px"></div>
+        </div>
+        <div style="display:flex;gap:5px">${DAYS.map((_,i)=>{
+          const done=data[i]&&data[i][task.id]&&data[i][task.id].done;
+          const isPast=i<TOD,isT=i===TOD;
+          return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:30px;border-radius:8px;background:${done?c.mid:isPast?'rgba(248,113,113,0.15)':'var(--surface2)'};border:${isT?`1.5px solid ${C.blue.mid}`:'1px solid var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${done?'var(--bg)':isPast?'var(--red)':'var(--text2)'}">${done?'✓':isPast?'✗':'·'}</div>
+            <span style="font-size:9px;color:${isT?C.blue.mid:'var(--text2)'}">${ABBR[i]}</span>
+          </div>`;
+        }).join('')}</div>
+        ${days.length?`<div style="font-size:11px;color:${c.mid};margin-top:10px">Fait le${days.length>1?'s':''} : <b>${days.join(', ')}</b></div>`:''}
+      </div>`;
+    }
+  });
+
+  document.getElementById('weekly-tracker').innerHTML=html||`<div style="text-align:center;padding:32px 16px;color:var(--text2);font-size:13px">
+    <div style="font-size:28px;margin-bottom:10px">📊</div>
+    Active le suivi 📊 sur une tâche pour la voir apparaître ici
+  </div>`;
 }
 
 function renderDayNav(){
@@ -1416,9 +1556,11 @@ function renderCard(task){
   const todoPct=todoTotal>0?Math.round(todoDone/todoTotal*100):0;
   const todoActive=todoItems.length>0;
 
+  const tracked=isTracked(task.id);
   const cardActions=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
     <span class="tbadge" style="background:${c.bg};color:${c.txt};border:1px solid ${c.bd}">${durLbl}</span>
     <div style="display:flex;gap:4px;margin-top:2px" onclick="event.stopPropagation()">
+      <button title="${tracked?'Désactiver le suivi':'Activer le suivi'}" onclick="toggleTracking('${task.id}')" style="width:28px;height:28px;border-radius:8px;border:1px solid ${tracked?'var(--accent)':'var(--border)'};background:${tracked?'rgba(124,106,255,0.15)':'var(--surface2)'};color:${tracked?'var(--accent2)':'var(--text2)'};font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s">📊</button>
       <button title="Renommer" onclick="renameTask('${task.id}')" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">✏️</button>
       <button title="Modifier la durée" onclick="editDur['${task.id}']=!editDur['${task.id}'];render()" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:${isEditDur?'rgba(124,106,255,0.18)':'var(--surface2)'};color:${isEditDur?'var(--accent2)':'var(--text2)'};font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s">⏱</button>
       <button title="Supprimer cette tâche" onclick="removeTaskConfirm('${task.id}')" style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(248,113,113,0.25);background:rgba(248,113,113,0.07);color:var(--red);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='rgba(248,113,113,0.18)'" onmouseout="this.style.background='rgba(248,113,113,0.07)'">🗑</button>
@@ -1565,25 +1707,116 @@ function renderCard(task){
   </div>`;
 }
 
-function renderAlerts(){
+// ── ALERTS CUSTOMIZATION ─────────────────────────────────────────────
+let alertsData=null; // null = not loaded yet
+
+function loadAlerts(){
+  try{const s=localStorage.getItem('plnr_alerts');if(s)alertsData=JSON.parse(s);}catch(e){}
+  if(!alertsData)alertsData={hiddenAuto:[], custom:[]};
+}
+function saveAlerts(){try{localStorage.setItem('plnr_alerts',JSON.stringify(alertsData));}catch(e){}}
+loadAlerts();
+
+function deleteAlert(idx,isCustom){
+  if(isCustom){alertsData.custom.splice(idx,1);}
+  else{const al=buildAutoAlerts();if(al[idx])alertsData.hiddenAuto.push(al[idx].key);}
+  saveAlerts();renderAlerts();
+}
+function openEditAlert(idx,isCustom){
+  const items=isCustom?alertsData.custom:buildAutoAlerts().filter(a=>!alertsData.hiddenAuto.includes(a.key));
+  const cur=isCustom?items[idx].msg:items[idx].msg;
+  showModal('Modifier le message','Texte de l\'alerte...',cur,[{
+    label:'Enregistrer',cls:'mbtn-ok',action(v){
+      if(!v)return;
+      if(isCustom){alertsData.custom[idx].msg=v;}
+      else{
+        // Convert auto to custom
+        const a=items[idx];
+        alertsData.hiddenAuto.push(a.key);
+        alertsData.custom.push({msg:v,col:a.col});
+      }
+      saveAlerts();renderAlerts();
+    }
+  }]);
+}
+function addCustomAlert(){
+  showModal('Nouvelle alerte','Message de l\'alerte...','', [{
+    label:'Ajouter',cls:'mbtn-ok',action(v){
+      if(!v)return;
+      alertsData.custom.push({msg:v,col:'blue'});
+      saveAlerts();renderAlerts();
+    }
+  }]);
+}
+
+function buildAutoAlerts(){
   const tasks=taskDefs(selDay),dData=data[selDay]||{};
   const doneN=tasks.filter(t=>dData[t.id]&&dData[t.id].done).length;
   const p=Math.round(doneN/tasks.length*100);
   const al=[];
-  if(p===100)al.push(['green','Journée complète ! Excellent travail 🎉']);
-  if(selDay<TOD&&p<100)al.push(['amber',`Journée passée – ${tasks.length-doneN} tâche(s) non effectuée(s)`]);
-  if(mathN()<3)al.push(['amber',`Maths ISSEA : encore ${3-mathN()} séance(s) pour l'objectif de la semaine`]);
+  if(p===100)al.push({key:'day_complete',col:'green',msg:'Journée complète ! Excellent travail 🎉'});
+  if(selDay<TOD&&p<100)al.push({key:'day_past',col:'amber',msg:`Journée passée – ${tasks.length-doneN} tâche(s) non effectuée(s)`});
+  if(mathN()<3)al.push({key:'math_obj',col:'amber',msg:`Maths ISSEA : encore ${3-mathN()} séance(s) pour l'objectif de la semaine`});
   const fd=formDone();
-  if(fd.size<4)al.push(['teal','Formations manquantes : '+DEF_FORM.filter(f=>!fd.has(f)).join(', ')]);
-  document.getElementById('alertz').innerHTML=al.map(([col,msg])=>{
-    const c=C[col==='amber'?'amber':col==='teal'?'teal':'green'];
-    return`<div class="alert" style="background:${c.bg};border-color:${c.bd};color:${c.txt}">${msg}</div>`;
-  }).join('');
+  if(fd.size<DEF_FORM.length)al.push({key:'form_missing',col:'teal',msg:'Formations manquantes : '+DEF_FORM.filter(f=>!fd.has(f)).join(', ')});
+  return al;
 }
 
-function toggleSimple(tid){
-  // Tasks can only be completed via the timer — clicking the card does nothing
-  // (kept for compatibility but no-op)
+function renderAlerts(){
+  const autoAll=buildAutoAlerts();
+  const visible=autoAll.filter(a=>!alertsData.hiddenAuto.includes(a.key));
+  const customs=alertsData.custom||[];
+
+  const alertHtml=[
+    ...visible.map((a,i)=>{
+      const c=C[a.col]||C.blue;
+      return`<div class="alert" style="background:${c.bg};border-color:${c.bd};color:${c.txt};position:relative;padding-right:72px">
+        ${a.msg}
+        <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:4px">
+          <button onclick="openEditAlert(${i},false)" title="Modifier" style="width:24px;height:24px;border-radius:6px;border:1px solid ${c.bd};background:transparent;color:${c.txt};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✏️</button>
+          <button onclick="deleteAlert(${i},false)" title="Supprimer" style="width:24px;height:24px;border-radius:6px;border:1px solid ${c.bd};background:transparent;color:${c.txt};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+      </div>`;
+    }),
+    ...customs.map((a,i)=>{
+      const c=C[a.col]||C.blue;
+      return`<div class="alert" style="background:${c.bg};border-color:${c.bd};color:${c.txt};position:relative;padding-right:72px">
+        ${a.msg}
+        <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:4px">
+          <button onclick="openEditAlert(${i},true)" title="Modifier" style="width:24px;height:24px;border-radius:6px;border:1px solid ${c.bd};background:transparent;color:${c.txt};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✏️</button>
+          <button onclick="deleteAlert(${i},true)" title="Supprimer" style="width:24px;height:24px;border-radius:6px;border:1px solid ${c.bd};background:transparent;color:${c.txt};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+      </div>`;
+    }),
+  ].join('');
+
+  document.getElementById('alertz').innerHTML=alertHtml+
+    `<button onclick="addCustomAlert()" style="width:100%;margin-top:6px;padding:10px;border-radius:var(--radius-sm);border:1.5px dashed var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif">+ Ajouter une alerte</button>`;
+}
+
+// ── TRACKING TOGGLE PER TASK ──────────────────────────────────────────
+// Tasks with built-in wtrack: ang, math, form, m1 (always shown unless removed)
+const BUILTIN_TRACKED=['ang','math','form','m1'];
+let trackingEnabled={}; // {tid: true/false} — for non-builtin tasks
+
+function loadTracking(){
+  try{const s=localStorage.getItem('plnr_tracking');if(s)trackingEnabled=JSON.parse(s);}catch(e){}
+}
+function saveTracking(){try{localStorage.setItem('plnr_tracking',JSON.stringify(trackingEnabled));}catch(e){}}
+loadTracking();
+
+function isTracked(tid){
+  if(BUILTIN_TRACKED.includes(tid)&&!removedTasks.has(tid))return true;
+  return !!trackingEnabled[tid];
+}
+function toggleTracking(tid){
+  if(BUILTIN_TRACKED.includes(tid)){
+    // For builtin, we can disable if they want
+    trackingEnabled[tid]=!isTracked(tid);
+  } else {
+    trackingEnabled[tid]=!trackingEnabled[tid];
+  }
+  saveTracking();render();
 }
 function resetTask(tid,e){
   if(e)e.stopPropagation();
@@ -1731,6 +1964,8 @@ function removeTaskConfirm(tid){
     document.getElementById('modal-inp').style.display='';
     removedTasks.add(tid);
     extraTasks=extraTasks.filter(t=>t.id!==tid);
+    delete trackingEnabled[tid]; // supprime aussi le suivi
+    saveTracking();
     saveCustomizations();render();
   };
   btnsDiv.appendChild(del);
